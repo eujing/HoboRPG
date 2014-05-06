@@ -2,7 +2,7 @@ import sdl2
 import sdl2.ext
 
 from Systems.Renderer import SoftwareRenderer
-from Systems.Movement import Velocity, MovementSystem, CollisionSystem
+from Systems.Movement import Destination, Velocity, MovementSystem, CollisionSystem
 
 
 class Player(sdl2.ext.Entity):
@@ -21,8 +21,22 @@ class Wall(sdl2.ext.Entity):
         self.velocity = Velocity()
 
 
+class Teleporter(sdl2.ext.Entity):
+
+    def __init__(self, world, sprite, x, y, destX, destY):
+        self.sprite = sprite
+        self.sprite.position = x, y
+        self.velocity = Velocity()
+        self.destination = Destination(destX, destY)
+
+    def onCollide(self, other):
+        s = other.sprite
+        s.x = self.destination.x
+        s.y = self.destination.y
+
+
 def main():
-    UNIT_LENGTH = 20
+    UNIT_LENGTH = 10
     sdl2.ext.init()
     window = sdl2.ext.Window("HoboRPG", size=(800, 400))
     window.show()
@@ -44,6 +58,11 @@ def main():
     for i in range(10):
         redSprite = factory.from_color(sdl2.ext.Color(255, 0, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
         Wall(world, redSprite, i*UNIT_LENGTH, 3*UNIT_LENGTH)
+
+    greenSprite = factory.from_color(sdl2.ext.Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
+    Teleporter(world, greenSprite, 0, 4*UNIT_LENGTH, 1*UNIT_LENGTH, 5*UNIT_LENGTH)
+    greenSprite2 = factory.from_color(sdl2.ext.Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
+    Teleporter(world, greenSprite2, 1*UNIT_LENGTH, 5*UNIT_LENGTH, 2*UNIT_LENGTH, 6*UNIT_LENGTH)
 
     running = True
     while running:

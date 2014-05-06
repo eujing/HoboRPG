@@ -17,6 +17,12 @@ class Position(utils.Vector2D):
         utils.Vector2D.__init__(self, x, y)
 
 
+class Destination(utils.Vector2D):
+
+    def __init__(self, x=0, y=0):
+        utils.Vector2D.__init__(self, x, y)
+
+
 class MovementSystem(sdl2.ext.Applicator):
 
     def __init__(self, minx, miny, maxx, maxy):
@@ -44,7 +50,6 @@ class CollisionSystem(sdl2.ext.Applicator):
 
     def __init__(self):
         sdl2.ext.Applicator.__init__(self)
-        self.is_applicator = True
         self.componenttypes = Velocity, sdl2.ext.Sprite
 
     def process(self, world, components):
@@ -54,11 +59,21 @@ class CollisionSystem(sdl2.ext.Applicator):
         # fucks shit up
         comps = list(components)
         for v, s in comps:
-            if v.x != 0 or v.y != 0:
-                for ov, os in comps:
-                    if world.get_entities(v)[0] != world.get_entities(ov)[0]:
-                        if int(s.x) == int(os.x) and int(s.y) == int(os.y):
-                            s.x -= v.x
-                            s.y -= v.y
-                            v.x = 0
-                            v.y = 0
+            # Only check moving objects
+            if v.x == 0 and v.y == 0:
+                # continue
+                pass
+            for ov, os in comps:
+                # Not the same object
+                currEntity = world.get_entities(v)[0]
+                otherEntity = world.get_entities(ov)[0]
+                if currEntity != otherEntity:
+                    # Collided
+                    if int(s.x) == int(os.x) and int(s.y) == int(os.y):
+                        s.x -= v.x
+                        s.y -= v.y
+                        v.x = 0
+                        v.y = 0
+
+                        if hasattr(otherEntity, "onCollide"):
+                            getattr(otherEntity, "onCollide")(currEntity)
