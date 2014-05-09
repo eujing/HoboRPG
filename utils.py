@@ -59,3 +59,12 @@ class Vector2D(object):
             self.x /= other
             self.y /= other
         return self
+
+
+def limit(var, lower, higher):
+    if var < lower:
+        return lower
+    elif var >= higher:
+        return higher
+    else:
+        return var

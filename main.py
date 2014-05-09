@@ -2,9 +2,10 @@ import sdl2
 import sdl2.ext
 from sdl2.ext import Entity, Color
 import logging
+import random
 
-from Systems.Renderer import SoftwareRenderer
-from Systems.Movement import Destination, Velocity, MovementSystem, CollisionSystem
+from Systems.Renderer import ConsoleRenderer
+from Systems.Movement import Collidable, Destination, Velocity, MovementSystem, CollisionSystem
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -16,6 +17,7 @@ class Player(Entity):
         self.sprite = sprite
         self.sprite.position = x, y
         self.velocity = Velocity()
+        self.collidable = Collidable(self)
 
 
 class Wall(Entity):
@@ -24,15 +26,17 @@ class Wall(Entity):
         self.sprite = sprite
         self.sprite.position = x, y
         self.velocity = Velocity()
+        self.collidable = Collidable(self)
 
 
 class Teleporter(Entity):
 
-    def __init__(self, world, sprite, x, y, destX, destY):
+    def __init__(self, world, sprite, pos=(0, 0), dest=(0, 0)):
         self.sprite = sprite
-        self.sprite.position = x, y
+        self.sprite.position = pos
         self.velocity = Velocity()
-        self.destination = Destination(destX, destY)
+        self.destination = Destination(dest[0], dest[1])
+        self.collidable = Collidable(self, effect=self.onCollide)
 
     def onCollide(self, other):
         s = other.sprite
@@ -47,32 +51,31 @@ def main():
     window.show()
 
     world = sdl2.ext.World()
-    spriteRenderer = SoftwareRenderer(window)
+    consoleRenderer = ConsoleRenderer(window, UNIT_LENGTH, [0, 0, 80, 40], (160, 80))
     collisionSystem = CollisionSystem()
-    movementSystem = MovementSystem(0, 0, 800, 400)
+    movementSystem = MovementSystem(UNIT_LENGTH, 0, 0, 160, 80)
 
     world.add_system(movementSystem)
     world.add_system(collisionSystem)
-    world.add_system(spriteRenderer)
+    world.add_system(consoleRenderer)
 
     factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
-    whiteSprite = factory.from_color(
-        Color(255, 255, 255), size=(UNIT_LENGTH, UNIT_LENGTH))
+    whiteSprite = factory.from_color(Color(255, 255, 255), size=(UNIT_LENGTH, UNIT_LENGTH))
     player = Player(world, whiteSprite, x=0, y=0)
+    consoleRenderer.setPlayer(player)
 
-    for i in range(10):
-        redSprite = factory.from_color(
-            Color(255, 0, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
-        Wall(world, redSprite, i * UNIT_LENGTH, 3 * UNIT_LENGTH)
+    greenSprite = factory.from_color(Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
+    Teleporter(world, greenSprite, pos=(0, 4), dest=(1, 5))
+    greenSprite2 = factory.from_color(Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
+    Teleporter(world, greenSprite2, pos=(1, 5), dest=(2, 6))
 
-    greenSprite = factory.from_color(
-        Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
-    Teleporter(world, greenSprite, 0, 4 *
-               UNIT_LENGTH, 1 * UNIT_LENGTH, 5 * UNIT_LENGTH)
-    greenSprite2 = factory.from_color(
-        Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
-    Teleporter(world, greenSprite2, 1 * UNIT_LENGTH,
-               5 * UNIT_LENGTH, 2 * UNIT_LENGTH, 6 * UNIT_LENGTH)
+    xCoords = [random.randint(0, 160) for i in range(50)]
+    yCoords = [random.randint(0, 80) for i in range(50)]
+    for x, y in set(zip(xCoords, yCoords)):
+        if (x, y) in ((0, 0), (0, 4), (1, 5)):
+            continue
+        redSprite = factory.from_color(Color(255, 0, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
+        Wall(world, redSprite, x, y)
 
     running = True
     while running:
@@ -85,13 +88,13 @@ def main():
             if event.type == sdl2.SDL_KEYDOWN:
                 key = event.key.keysym.sym
                 if key == sdl2.SDLK_w:
-                    player.velocity.y = -UNIT_LENGTH
+                    player.velocity.y = -1
                 elif key == sdl2.SDLK_s:
-                    player.velocity.y = UNIT_LENGTH
+                    player.velocity.y = 1
                 elif key == sdl2.SDLK_a:
-                    player.velocity.x = -UNIT_LENGTH
+                    player.velocity.x = -1
                 elif key == sdl2.SDLK_d:
-                    player.velocity.x = UNIT_LENGTH
+                    player.velocity.x = 1
 
             if event.type == sdl2.SDL_KEYUP:
                 key = event.key.keysym.sym
