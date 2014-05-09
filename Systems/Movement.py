@@ -1,33 +1,33 @@
-import utils
-import sdl2.ext
+from utils import Vector2D
+from sdl2.ext import Applicator, Sprite
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class Velocity(utils.Vector2D):
+class Velocity(Vector2D):
 
     def __init__(self, x=0, y=0):
-        utils.Vector2D.__init__(self, x, y)
+        Vector2D.__init__(self, x, y)
 
 
-class Position(utils.Vector2D):
-
-    def __init__(self, x=0, y=0):
-        utils.Vector2D.__init__(self, x, y)
-
-
-class Destination(utils.Vector2D):
+class Position(Vector2D):
 
     def __init__(self, x=0, y=0):
-        utils.Vector2D.__init__(self, x, y)
+        Vector2D.__init__(self, x, y)
 
 
-class MovementSystem(sdl2.ext.Applicator):
+class Destination(Vector2D):
+
+    def __init__(self, x=0, y=0):
+        Vector2D.__init__(self, x, y)
+
+
+class MovementSystem(Applicator):
 
     def __init__(self, minx, miny, maxx, maxy):
-        sdl2.ext.Applicator.__init__(self)
-        self.componenttypes = Velocity, sdl2.ext.Sprite
+        super(MovementSystem, self).__init__()
+        self.componenttypes = Velocity, Sprite
         self.minx, self.miny = minx, miny
         self.maxx, self.maxy = maxx, maxy
 
@@ -46,11 +46,11 @@ class MovementSystem(sdl2.ext.Applicator):
                 s.y = self.maxy - height
 
 
-class CollisionSystem(sdl2.ext.Applicator):
+class CollisionSystem(Applicator):
 
     def __init__(self):
-        sdl2.ext.Applicator.__init__(self)
-        self.componenttypes = Velocity, sdl2.ext.Sprite
+        super(CollisionSystem, self).__init__()
+        self.componenttypes = Velocity, Sprite
 
     def process(self, world, components):
         # Naive collision checking
@@ -74,6 +74,11 @@ class CollisionSystem(sdl2.ext.Applicator):
                         s.y -= v.y
                         v.x = 0
                         v.y = 0
+
+                        logger.debug(
+                            "{0} collided with {1}".format(
+                                currEntity.__class__.__name__,
+                                otherEntity.__class__.__name__))
 
                         if hasattr(otherEntity, "onCollide"):
                             getattr(otherEntity, "onCollide")(currEntity)

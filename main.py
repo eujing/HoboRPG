@@ -1,19 +1,16 @@
 import sdl2
 import sdl2.ext
+from sdl2.ext import Entity, Color
+import logging
 
 from Systems.Renderer import SoftwareRenderer
 from Systems.Movement import Destination, Velocity, MovementSystem, CollisionSystem
 
-
-class Player(sdl2.ext.Entity):
-
-    def __init__(self, world, sprite, x=0, y=0):
-        self.sprite = sprite
-        self.sprite.position = x, y
-        self.velocity = Velocity()
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 
-class Wall(sdl2.ext.Entity):
+class Player(Entity):
 
     def __init__(self, world, sprite, x=0, y=0):
         self.sprite = sprite
@@ -21,7 +18,15 @@ class Wall(sdl2.ext.Entity):
         self.velocity = Velocity()
 
 
-class Teleporter(sdl2.ext.Entity):
+class Wall(Entity):
+
+    def __init__(self, world, sprite, x=0, y=0):
+        self.sprite = sprite
+        self.sprite.position = x, y
+        self.velocity = Velocity()
+
+
+class Teleporter(Entity):
 
     def __init__(self, world, sprite, x, y, destX, destY):
         self.sprite = sprite
@@ -52,17 +57,22 @@ def main():
 
     factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
     whiteSprite = factory.from_color(
-        sdl2.ext.Color(255, 255, 255), size=(UNIT_LENGTH, UNIT_LENGTH))
+        Color(255, 255, 255), size=(UNIT_LENGTH, UNIT_LENGTH))
     player = Player(world, whiteSprite, x=0, y=0)
 
     for i in range(10):
-        redSprite = factory.from_color(sdl2.ext.Color(255, 0, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
-        Wall(world, redSprite, i*UNIT_LENGTH, 3*UNIT_LENGTH)
+        redSprite = factory.from_color(
+            Color(255, 0, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
+        Wall(world, redSprite, i * UNIT_LENGTH, 3 * UNIT_LENGTH)
 
-    greenSprite = factory.from_color(sdl2.ext.Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
-    Teleporter(world, greenSprite, 0, 4*UNIT_LENGTH, 1*UNIT_LENGTH, 5*UNIT_LENGTH)
-    greenSprite2 = factory.from_color(sdl2.ext.Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
-    Teleporter(world, greenSprite2, 1*UNIT_LENGTH, 5*UNIT_LENGTH, 2*UNIT_LENGTH, 6*UNIT_LENGTH)
+    greenSprite = factory.from_color(
+        Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
+    Teleporter(world, greenSprite, 0, 4 *
+               UNIT_LENGTH, 1 * UNIT_LENGTH, 5 * UNIT_LENGTH)
+    greenSprite2 = factory.from_color(
+        Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
+    Teleporter(world, greenSprite2, 1 * UNIT_LENGTH,
+               5 * UNIT_LENGTH, 2 * UNIT_LENGTH, 6 * UNIT_LENGTH)
 
     running = True
     while running:
@@ -71,22 +81,26 @@ def main():
             if event.type == sdl2.SDL_QUIT:
                 running = False
                 break
+
             if event.type == sdl2.SDL_KEYDOWN:
-                if event.key.keysym.sym == sdl2.SDLK_w:
+                key = event.key.keysym.sym
+                if key == sdl2.SDLK_w:
                     player.velocity.y = -UNIT_LENGTH
-                elif event.key.keysym.sym == sdl2.SDLK_s:
+                elif key == sdl2.SDLK_s:
                     player.velocity.y = UNIT_LENGTH
-                elif event.key.keysym.sym == sdl2.SDLK_a:
+                elif key == sdl2.SDLK_a:
                     player.velocity.x = -UNIT_LENGTH
-                elif event.key.keysym.sym == sdl2.SDLK_d:
+                elif key == sdl2.SDLK_d:
                     player.velocity.x = UNIT_LENGTH
+
             if event.type == sdl2.SDL_KEYUP:
-                if event.key.keysym.sym in (sdl2.SDLK_w, sdl2.SDLK_s):
+                key = event.key.keysym.sym
+                if key in (sdl2.SDLK_w, sdl2.SDLK_s):
                     player.velocity.y = 0
-                if event.key.keysym.sym in (sdl2.SDLK_a, sdl2.SDLK_d):
+                if key in (sdl2.SDLK_a, sdl2.SDLK_d):
                     player.velocity.x = 0
 
-        sdl2.SDL_Delay(30)
+        sdl2.SDL_Delay(10)
         world.process()
     return 0
 
