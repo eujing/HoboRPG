@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 def main():
     # Sets the number of pixels the width of a grid cell should be
     UNIT_LENGTH = 10
+    FPS = 40.0
     sdl2.ext.init()
     window = sdl2.ext.Window("HoboRPG", size=(800, 400))
     window.show()
@@ -40,6 +41,7 @@ def main():
     world.postEvent(MapRequestEvent("world"))
 
     running = True
+    expected = 1000/FPS
     while running:
         events = sdl2.ext.get_events()
         for event in events:
@@ -65,8 +67,14 @@ def main():
                 if key in (sdl2.SDLK_a, sdl2.SDLK_d):
                     player.velocity.x = 0
 
-        sdl2.SDL_Delay(10)
+        prevTicks = sdl2.SDL_GetTicks()
         world.process()
+
+        currTicks = sdl2.SDL_GetTicks()
+        diff = currTicks - prevTicks
+        # logger.debug("Expected: {0} Actual: {1}".format(FPS, 1000/diff))
+        if diff < expected:
+            sdl2.SDL_Delay(int(expected - diff))
     return 0
 
 if __name__ == "__main__":
