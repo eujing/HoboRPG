@@ -96,6 +96,26 @@ class Vector2D(object):
             self.y /= other
         return self
 
+    def limit(self, topLeft, bottomRight):
+        if not isinstance(topLeft, Vector2D):
+            raise TypeError
+        if not isinstance(bottomRight, Vector2D):
+            raise TypeError
+        self.x = limit(self.x, topLeft.x, bottomRight.x)
+        self.y = limit(self.y, topLeft.y, bottomRight.y)
+
+    def within(self, topLeft, bottomRight):
+        if not isinstance(topLeft, Vector2D):
+            raise TypeError
+        if not isinstance(bottomRight, Vector2D):
+            raise TypeError
+        if self.x < topLeft.x or self.x > bottomRight.x:
+            return False
+        if self.y < topLeft.y or self.y > bottomRight.y:
+            return False
+        else:
+            return True
+
 
 def limit(var, lower, higher):
     if var < lower:

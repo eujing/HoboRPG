@@ -1,8 +1,12 @@
-from sdl2.ext import World, System
+import logging
+
+from sdl2.ext import World, Applicator
 from collections import defaultdict
 
+logger = logging.getLogger(__name__)
 
-class HSystem(System):
+
+class HSystem(Applicator):
 
     def __init__(self):
         super(HSystem, self).__init__()
@@ -17,10 +21,10 @@ class HWorld(World):
 
     def add_system(self, system):
         super(HWorld, self).add_system(system)
-        for event, listener in system.eventListeners:
-            self.eventListeners[event].append(listener)
+        for eventType, listener in system.eventListeners.items():
+            self.eventListeners[eventType].append(listener)
 
     def postEvent(self, event):
         if event.__class__ in self.eventListeners:
-            for listener in self.eventListeners:
+            for listener in self.eventListeners[event.__class__]:
                 listener(event)

@@ -1,28 +1,37 @@
-from utils import Vector2D, limit
-from sdl2.ext import Applicator, Sprite
 import logging
+import Systems.Mapping
+
+from Utils import Vector2D, autoslot
+from Ecs import HSystem
+from sdl2.ext import Sprite
 
 logger = logging.getLogger(__name__)
 
 
+@autoslot
 class Velocity(Vector2D):
 
     def __init__(self, x=0, y=0):
         Vector2D.__init__(self, x, y)
 
 
+@autoslot
 class Position(Vector2D):
 
-    def __init__(self, x=0, y=0):
-        Vector2D.__init__(self, x, y)
+    def __init__(self, mapName, x=0, y=0):
+        super(Position, self).__init__(x, y)
+        self.mapName = mapName
 
 
+@autoslot
 class Destination(Vector2D):
 
-    def __init__(self, x=0, y=0):
-        Vector2D.__init__(self, x, y)
+    def __init__(self, mapName, x=0, y=0):
+        super(Destination, self).__init__(x, y)
+        self.mapName = mapName
 
 
+@autoslot
 class Collidable(object):
 
     def __init__(self, caller, effect=None):
@@ -33,23 +42,26 @@ class Collidable(object):
         return self.effect(*arg)
 
 
-class MovementSystem(Applicator):
+class MovementSystem(HSystem):
 
-    def __init__(self, minx, miny, maxx, maxy):
+    def __init__(self):
         super(MovementSystem, self).__init__()
         self.componenttypes = Velocity, Position
-        self.minx, self.miny = minx, miny
-        self.maxx, self.maxy = maxx, maxy
+        self.topLeft = None
+        self.bottomRight = None
+        self.eventListeners[Systems.Mapping.MapChangeEvent] = self.mapChangeHandler
+
+    def mapChangeHandler(self, mapChangeEvent):
+        self.topLeft = Position(0, 0)
+        self.bottomRight = Position(mapChangeEvent.map.name, mapChangeEvent.map.size[0] - 1, mapChangeEvent.map.size[1] - 1)
 
     def process(self, world, components):
         for v, p in components:
-            p.x = limit(p.x + v.x, self.minx, int(
-                self.maxx - 1))
-            p.y = limit(p.y + v.y, self.miny, int(
-                self.maxy - 1))
+            p += v
+            p.limit(self.topLeft, self.bottomRight)
 
 
-class CollisionSystem(Applicator):
+class CollisionSystem(HSystem):
 
     def __init__(self):
         super(CollisionSystem, self).__init__()
@@ -76,18 +88,17 @@ class CollisionSystem(Applicator):
                     n += 1
                     # Collided
                     if int(p.x) == int(op.x) and int(p.y) == int(op.y):
-                        p.x -= v.x
-                        p.y -= v.y
+                        p -= v
                         v.x = 0
                         v.y = 0
 
-                        logger.debug(
-                            "{0} collided with {1}".format(
-                                currEntity.__class__.__name__,
-                                otherEntity.__class__.__name__))
+                        # logger.debug(
+                        #     "{0} collided with {1}".format(
+                        #         currEntity.__class__.__name__,
+                        #         otherEntity.__class__.__name__))
 
                         if collidable.effect is not None:
-                            collidable.doEffect(otherEntity)
+                            collidable.doEffect(world, otherEntity)
                         if oCollidable.effect is not None:
-                            oCollidable.doEffect(currEntity)
+                            oCollidable.doEffect(world, currEntity)
             #logger.debug("Checked for {0} collisions in 1 pass".format(n))
