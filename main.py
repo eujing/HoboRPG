@@ -5,7 +5,9 @@ import logging
 import random
 
 from Systems.Renderer import ConsoleRenderer
-from Systems.Movement import Collidable, Destination, Velocity, MovementSystem, CollisionSystem
+from Systems.Movement import Collidable, Destination, Position, Velocity, MovementSystem, CollisionSystem
+from utils import autoslot
+from ecs import World
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -15,16 +17,17 @@ class Player(Entity):
 
     def __init__(self, world, sprite, x=0, y=0):
         self.sprite = sprite
-        self.sprite.position = x, y
+        self.position = Position(x, y)
         self.velocity = Velocity()
         self.collidable = Collidable(self)
 
 
+@autoslot
 class Wall(Entity):
 
     def __init__(self, world, sprite, x=0, y=0):
         self.sprite = sprite
-        self.sprite.position = x, y
+        self.position = Position(x, y)
         self.velocity = Velocity()
         self.collidable = Collidable(self)
 
@@ -33,15 +36,15 @@ class Teleporter(Entity):
 
     def __init__(self, world, sprite, pos=(0, 0), dest=(0, 0)):
         self.sprite = sprite
-        self.sprite.position = pos
+        self.position = Position(*pos)
         self.velocity = Velocity()
-        self.destination = Destination(dest[0], dest[1])
+        self.destination = Destination(*dest)
         self.collidable = Collidable(self, effect=self.onCollide)
 
     def onCollide(self, other):
-        s = other.sprite
-        s.x = self.destination.x
-        s.y = self.destination.y
+        p = other.position
+        p.x = self.destination.x
+        p.y = self.destination.y
 
 
 def main():
@@ -50,23 +53,27 @@ def main():
     window = sdl2.ext.Window("HoboRPG", size=(800, 400))
     window.show()
 
-    world = sdl2.ext.World()
-    consoleRenderer = ConsoleRenderer(window, UNIT_LENGTH, [0, 0, 80, 40], (160, 80))
+    world = World()
+    consoleRenderer = ConsoleRenderer(
+        window, UNIT_LENGTH, [0, 0, 80, 40], (160, 80))
     collisionSystem = CollisionSystem()
-    movementSystem = MovementSystem(UNIT_LENGTH, 0, 0, 160, 80)
+    movementSystem = MovementSystem(0, 0, 160, 80)
 
     world.add_system(movementSystem)
     world.add_system(collisionSystem)
     world.add_system(consoleRenderer)
 
     factory = sdl2.ext.SpriteFactory(sdl2.ext.SOFTWARE)
-    whiteSprite = factory.from_color(Color(255, 255, 255), size=(UNIT_LENGTH, UNIT_LENGTH))
+    whiteSprite = factory.from_color(
+        Color(255, 255, 255), size=(UNIT_LENGTH, UNIT_LENGTH))
     player = Player(world, whiteSprite, x=0, y=0)
     consoleRenderer.setPlayer(player)
 
-    greenSprite = factory.from_color(Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
+    greenSprite = factory.from_color(
+        Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
     Teleporter(world, greenSprite, pos=(0, 4), dest=(1, 5))
-    greenSprite2 = factory.from_color(Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
+    greenSprite2 = factory.from_color(
+        Color(0, 255, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
     Teleporter(world, greenSprite2, pos=(1, 5), dest=(2, 6))
 
     xCoords = [random.randint(0, 160) for i in range(50)]
@@ -74,7 +81,8 @@ def main():
     for x, y in set(zip(xCoords, yCoords)):
         if (x, y) in ((0, 0), (0, 4), (1, 5)):
             continue
-        redSprite = factory.from_color(Color(255, 0, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
+        redSprite = factory.from_color(
+            Color(255, 0, 0), size=(UNIT_LENGTH, UNIT_LENGTH))
         Wall(world, redSprite, x, y)
 
     running = True

@@ -1,3 +1,39 @@
+import inspect
+import _ast
+import types
+
+
+def autoslot(cls):
+    name = cls.__name__
+    bases = cls.__bases__
+
+    body = {funcName: func for funcName, func in inspect.getmembers(cls)
+            if isinstance(func, types.FunctionType)}
+
+    slots = []
+    for base in bases:
+        if hasattr(base, "__slots__"):
+            slots.extend(base.__slots__)
+
+    # Parse ast of target class to look for assignments to attributes
+    source = inspect.getsource(cls)
+    ast = compile(source, "dummyFile", "exec", _ast.PyCF_ONLY_AST)
+
+    classdef = ast.body[0]
+    for declaration in classdef.body:
+        if isinstance(declaration, _ast.FunctionDef):
+            if declaration.name == "__init__":
+                for statement in declaration.body:
+                    if isinstance(statement, _ast.Assign):
+                        for target in statement.targets:
+                            if target.attr not in slots:
+                                slots.append(target.attr)
+
+    body["__slots__"] = slots
+
+    return type(name, bases, body)
+
+
 class Vector2D(object):
 
     def __init__(self, x, y):

@@ -22,6 +22,7 @@ class Destination(Vector2D):
     def __init__(self, x=0, y=0):
         Vector2D.__init__(self, x, y)
 
+
 class Collidable(object):
 
     def __init__(self, caller, effect=None):
@@ -34,24 +35,25 @@ class Collidable(object):
 
 class MovementSystem(Applicator):
 
-    def __init__(self, gridWidth, minx, miny, maxx, maxy):
+    def __init__(self, minx, miny, maxx, maxy):
         super(MovementSystem, self).__init__()
-        self.componenttypes = Velocity, Sprite
+        self.componenttypes = Velocity, Position
         self.minx, self.miny = minx, miny
         self.maxx, self.maxy = maxx, maxy
-        self.gridWidth = gridWidth
 
     def process(self, world, components):
-        for v, s in components:
-            s.x = limit(s.x + v.x, self.minx, int(self.maxx - s.size[0]/self.gridWidth))
-            s.y = limit(s.y + v.y, self.miny, int(self.maxy - s.size[1]/self.gridWidth))
+        for v, p in components:
+            p.x = limit(p.x + v.x, self.minx, int(
+                self.maxx - 1))
+            p.y = limit(p.y + v.y, self.miny, int(
+                self.maxy - 1))
 
 
 class CollisionSystem(Applicator):
 
     def __init__(self):
         super(CollisionSystem, self).__init__()
-        self.componenttypes = Velocity, Sprite, Collidable
+        self.componenttypes = Velocity, Sprite, Position, Collidable
 
     def process(self, world, components):
         # Naive collision checking
@@ -60,22 +62,22 @@ class CollisionSystem(Applicator):
         # fucks shit up
         comps = list(components)
         n = 0
-        for v, s, collidable in comps:
+        for v, s, p, collidable in comps:
             # Only check moving objects
             # Results in some
             if v.x == 0 and v.y == 0 and collidable.effect is None:
                 continue
             # for os in world.get_components((Sprite)):
-            for ov, os, oCollidable in comps:
+            for ov, os, op, oCollidable in comps:
                 # Not the same object
                 currEntity = world.get_entities(s)[0]
                 otherEntity = world.get_entities(os)[0]
                 if currEntity != otherEntity:
                     n += 1
                     # Collided
-                    if int(s.x) == int(os.x) and int(s.y) == int(os.y):
-                        s.x -= v.x
-                        s.y -= v.y
+                    if int(p.x) == int(op.x) and int(p.y) == int(op.y):
+                        p.x -= v.x
+                        p.y -= v.y
                         v.x = 0
                         v.y = 0
 
