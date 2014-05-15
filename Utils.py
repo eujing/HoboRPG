@@ -4,6 +4,16 @@ import types
 
 
 def autoslot(cls):
+    """
+    A decorator to optimize the memory footprint of classes.
+    Automatically generates a modified class with '__slots__' based on the __init__ definition.
+
+    Args:
+        cls: Class to optimize
+
+    Returns:
+        A modified version of the class that does not use a dict internally
+    """
     name = cls.__name__
     bases = cls.__bases__
 
@@ -35,7 +45,9 @@ def autoslot(cls):
 
 
 class Vector2D(object):
-
+    """
+    A convenient class for doing 2D operations
+    """
     def __init__(self, x, y):
         self.x = x
         self.y = y

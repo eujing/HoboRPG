@@ -12,6 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 class Map(object):
+    """
+    Wraps the tracking of entities relevant to the current map
+    and helper methods for creating a map
+    """
 
     def __init__(self, name, size):
         self.name = name
@@ -27,6 +31,13 @@ class Map(object):
         self.entities = []
 
     def setSprite(self, entity):
+        """
+        Helper method for creating a map with Entities
+        Caches repeating sprites to save memory
+
+        Args:
+            entity: Entities that have a Sprite and Position
+        """
         self.entities.append(entity)
         sprite = entity.sprite
         pos = entity.position
@@ -38,6 +49,12 @@ class Map(object):
             self.grid[pos.x][pos.y] = len(self.spriteStore) - 1
 
     def getSprite(self, pos):
+        """
+        Helper method for getting a sprite at a position
+
+        Args:
+            pos: A Position indicating the position of the sprite
+        """
         index = self.grid[pos.x][pos.y]
         if index == -1:
             return None
@@ -46,20 +63,36 @@ class Map(object):
 
 
 class MapRequestEvent(object):
+    """
+    For requesting a change in map
+    """
 
     def __init__(self, mapName):
         self.mapName = mapName
 
 
 class MapChangeEvent(object):
+    """
+    To notify that the map has been changed
+    """
 
     def __init__(self, newMap):
         self.map = newMap
 
 
 class MapSystem(HSystem):
+    """
+    Handles requests for maps and the loading/creation/changing of maps
+    """
 
     def __init__(self, world, gridWidth):
+        """
+        Initializes a MapSystem
+
+        Args:
+            world: world where all entities are stored
+            gridWidth: width of a unit length in pixels
+        """
         super(MapSystem, self).__init__()
         self.gridWidth = gridWidth
         self.world = world
@@ -68,6 +101,12 @@ class MapSystem(HSystem):
         self.currMap = None
 
     def mapRequestHandler(self, mapRequestEvent):
+        """
+        Handles a request for map change
+
+        Args:
+            mapRequestEvent: A MapRequestEvent object
+        """
         logger.debug("Generating map: {0}".format(mapRequestEvent.mapName))
         m = None
 

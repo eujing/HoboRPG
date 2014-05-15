@@ -15,8 +15,20 @@ logger = logging.getLogger()
 
 
 class ConsoleRenderer(sdl2.ext.SoftwareSpriteRenderSystem, HSystem):
+    """
+    Handles the rendering of entities with Sprites and Positions
+    Also allows for scrolling via a viewport
+    """
 
     def __init__(self, window, gridWidth, viewport):
+        """
+        Initializes ConsoleRenderer object
+
+        Args:
+            window: window to be rendered to
+            gridWidth: width of a unit length in pixels
+            viewport: a list of 4 values (x, y, w, h) describing the viewport
+        """
         super(ConsoleRenderer, self).__init__(window)
         self.componenttypes = (sdl2.ext.Sprite, Systems.Movement.Position)
         self.gridWidth = gridWidth
@@ -26,6 +38,12 @@ class ConsoleRenderer(sdl2.ext.SoftwareSpriteRenderSystem, HSystem):
         self.eventListeners[Systems.Mapping.MapChangeEvent] = self.mapChangeHandler
 
     def mapChangeHandler(self, mapChangeEvent):
+        """
+        Changes map being rendered to the new current map
+
+        Args:
+            mapChangeEvent: A MapChangeEvent object
+        """
         self.map = mapChangeEvent.map
         self.viewport[0] = 0
         self.viewport[1] = 0
@@ -34,6 +52,9 @@ class ConsoleRenderer(sdl2.ext.SoftwareSpriteRenderSystem, HSystem):
         self.player = player
 
     def updateViewport(self):
+        """
+        Updates the coordinates of the viewport to track the player's position
+        """
         if self.player is None:
             return
 
@@ -66,23 +87,30 @@ class ConsoleRenderer(sdl2.ext.SoftwareSpriteRenderSystem, HSystem):
         SDL_BlitSurface(sprite.surface, None, self.surface, r)
 
     def process(self, world, components):
+        """
+        Tracks the map the player is in and requests for a map change accordingly.
+        Also calls the rendering method
+
+        Args:
+            world: The current world
+            components: Tuples of (Sprite, Position)
+        """
         # Check if player has transitioned into another map
         if self.player.position.mapName != self.map.name:
             world.postEvent(Systems.Mapping.MapRequestEvent(self.player.position.mapName))
         self.render(sorted(components, key=lambda c: c[0].depth))
 
     def render(self, comps):
+        """
+        Renders all Entities with a Sprite and Position
+
+        Args:
+            comps: Sorted tuples of (Sprite, Position)
+        """
         sdl2.ext.fill(self.surface, sdl2.ext.Color(0, 0, 0))
 
         self.updateViewport()
         r = sdl2.rect.SDL_Rect(0, 0, 0, 0)
-
-        # for x in range(self.viewport[0], self.viewport[0] + self.viewport[2]):
-        #     for y in range(self.viewport[1], self.viewport[1] + self.viewport[3]):
-        #         pos = Systems.Movement.Position(x, y)
-        #         s = self.map.getSprite(pos)
-        #         if s is not None:
-        #             self.drawSprite(s, pos, r)
 
         if isinstance(comps, collections.Iterable):
             for s, p in comps:

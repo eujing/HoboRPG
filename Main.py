@@ -22,6 +22,8 @@ def main():
     window.show()
 
     world = HWorld()
+
+    # Create systems
     consoleRenderer = ConsoleRenderer(window, UNIT_LENGTH, [0, 0, 80, 40])
     collisionSystem = CollisionSystem()
     movementSystem = MovementSystem()
@@ -33,6 +35,7 @@ def main():
     player = Player(world, whiteSprite, Position("world", 0, 0))
     consoleRenderer.setPlayer(player)
 
+    # Add systems to world
     world.add_system(mapSystem)
     world.add_system(movementSystem)
     world.add_system(collisionSystem)
@@ -41,8 +44,9 @@ def main():
     world.postEvent(MapRequestEvent("world"))
 
     running = True
-    expected = 1000/FPS
+    expected = 1000/FPS # ms per frame
     while running:
+        # Process user input
         events = sdl2.ext.get_events()
         for event in events:
             if event.type == sdl2.SDL_QUIT:
@@ -74,6 +78,7 @@ def main():
         diff = currTicks - prevTicks
         # logger.debug("Expected: {0} Actual: {1}".format(FPS, 1000/diff))
         if diff < expected:
+            # Possibly do something else with extra cpu time?
             sdl2.SDL_Delay(int(expected - diff))
     return 0
 
